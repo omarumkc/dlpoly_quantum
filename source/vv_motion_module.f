@@ -639,7 +639,8 @@ c     deallocate working arrays
 
       subroutine nvtvv_b1
      x  (safe,lshmov,isw,idnode,mxnode,natms,imcon,nscons,ntcons,
-     x  tstep,taut,sigma,engke,tolnce,vircon)
+     x  tstep,taut,sigma,engke,tolnce,vircon,
+     x  lmsite,g_qt4f,ntpmls)
 
 c***********************************************************************
 c     
@@ -668,6 +669,10 @@ c***********************************************************************
       integer fail(nnn)
       real(8) strkin(9)
       
+      logical :: lmsite
+      integer :: ntpmls
+      real(8) :: g_qt4f
+
       real(8), allocatable :: xxt(:),yyt(:),zzt(:)
       real(8), allocatable :: txx(:),tyy(:),tzz(:)
       real(8), allocatable :: dxx(:),dyy(:),dzz(:)
@@ -766,9 +771,25 @@ c     apply shake corrections to bond constraints
 
         endif
 
+c     update the position of M-site if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+
+        endif
+
 c     second pass of velocity verlet algorithm
         
       else
+
+c  Redistribute the M-site forces if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qt4_force_redist(idnode,mxnode,nbeads,ntpmls,g_qt4f)
+
+        endif
 
 c     merge velocity data
         
@@ -1146,7 +1167,7 @@ c***********************************************************************
 
       integer, parameter :: nnn=4
       
-      logical safe,lshmov,lmsite
+      logical safe,lshmov
       integer isw,idnode,mxnode,natms,imcon,nscons,ntcons
       integer i,j,k,iatm0,iatm1
       real(8) tstep,taut,sigma,chit,consv,conint,engke,tolnce,vircon
@@ -1154,8 +1175,9 @@ c***********************************************************************
       integer fail(nnn)
       real(8) strkin(9)
 
-      integer ntpmls
-      real(8) g_qt4f
+      logical :: lmsite
+      integer :: ntpmls
+      real(8) :: g_qt4f
 
       real(8), allocatable :: xxt(:),yyt(:),zzt(:)
       real(8), allocatable :: txx(:),tyy(:),tzz(:)
@@ -1287,14 +1309,6 @@ c     merge position data
         if(mxnode.gt.1)
      x    call merge(idnode,mxnode,natms,mxbuff,xxx,yyy,zzz,buffer)
 
-c     update the position of M-site if water model qtip4p/f requested
-
-        if(lmsite)then
-
-          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
-
-        endif
-
 c     apply shake corrections to bond constraints
         
         if(ntcons.gt.0)then
@@ -1308,6 +1322,14 @@ c     apply shake corrections to bond constraints
      x      tolnce,tstep,vircon,dxx,dyy,dzz,dxt,dyt,dzt,
      x      txx,tyy,tzz,xxt,yyt,zzt,strcns)
           if(.not.safe)return
+
+        endif
+
+c     update the position of M-site if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
 
         endif
 
@@ -1757,7 +1779,8 @@ c cccccccccccccccccccccccccccccccccccccc
       subroutine nptvv_b1
      x  (safe,lshmov,isw,idnode,mxnode,natms,imcon,nscons,
      x  ntcons,ntpatm,tstep,taut,taup,sigma,engke,press,elrc,
-     x  virlrc,tolnce,virtot,vircon,volm)
+     x  virlrc,tolnce,virtot,vircon,volm,
+     x  lmsite,ntpmls,g_qt4f)
       
 c***********************************************************************
 c     
@@ -1800,7 +1823,11 @@ c***********************************************************************
       real(8), allocatable :: dxx(:),dyy(:),dzz(:)
       real(8), allocatable :: dxt(:),dyt(:),dzt(:)
       real(8), allocatable :: vxo(:),vyo(:),vzo(:)
-      
+
+      logical :: lmsite
+      integer :: ntpmls
+      real(8) :: g_qt4f
+
       save newjob,volm0,elrc0,virlrc0,iatm0,iatm1,dens0
       
       data uni/1.d0,0.d0,0.d0,0.d0,1.d0,0.d0,0.d0,0.d0,1.d0/
@@ -2004,9 +2031,25 @@ c     construct scaling tensor for tethered bonds
           eta(i)=scale*uni(i)
         enddo
 
+c     update the position of M-site if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+
+        endif
+
 c     second pass of velocity verlet algorithm
         
       else
+
+c  Redistribute the M-site forces if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qt4_force_redist(idnode,mxnode,nbeads,ntpmls,g_qt4f)
+
+        endif
 
 c     update velocities
         
@@ -2088,7 +2131,8 @@ c     deallocate working arrays
      x  (safe,lshmov,isw,idnode,mxnode,natms,imcon,nscons,ntcons,
      x  ntpatm,ntshl,keyshl,tstep,taut,taup,sigma,temp,chip,chit,
      x  consv,conint,engke,elrc,tolnce,vircon,virtot,virlrc,volm,
-     x  press,chit_shl,sigma_shl)
+     x  press,chit_shl,sigma_shl,
+     x  lmsite,ntpmls,g_qt4f)
 
 c***********************************************************************
 c     
@@ -2131,6 +2175,10 @@ c***********************************************************************
 
       integer fail(nnn)
       real(8) cell0(9),com(3),vom(3),strkin(9),uni(9)
+
+      logical :: lmsite
+      integer :: ntpmls
+      real(8) :: g_qt4f
 
       save newjob,totmas,volm0,elrc0,virlrc0,dens0
       save cell0,iatm0,iatm1,hstep,qstep,fstep,pmass,qmass
@@ -2410,9 +2458,25 @@ c     restore original integration parameters if iter < mxiter
           
         enddo
 
+c     update the position of M-site if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qtip4pf(idnode,mxnode,imcon,nbeads,ntpmls,g_qt4f)
+
+        endif
+
 c     second stage of velocity verlet algorithm
         
       else
+
+c  Redistribute the M-site forces if water model qtip4p/f requested
+
+        if(lmsite)then
+
+          call qt4_force_redist(idnode,mxnode,nbeads,ntpmls,g_qt4f)
+
+        endif
 
 c     update velocities
         
@@ -2798,6 +2862,14 @@ c     merge position data
         
         if(mxnode.gt.1)
      x    call merge(idnode,mxnode,natms,mxbuff,xxx,yyy,zzz,buffer)
+
+c     adjust long range corrections and number density
+
+      elrc=elrc0*(volm0/volm)
+      virlrc=virlrc0*(volm0/volm)
+      do kk=1,ntpatm
+        dens(kk)=dens0(kk)*(volm0/volm)
+      enddo
 
 c     update the position of M-site if water model qtip4p/f requested
 

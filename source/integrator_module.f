@@ -397,7 +397,8 @@ c     Berendsen thermostat
           
           call nvtvv_b1
      x      (safe,lshmov,isw,idnode,mxnode,natms,imcon,nscons,
-     x      ntcons,tstep,taut,sigma,engke,tolnce,vircon)
+     x      ntcons,tstep,taut,sigma,engke,tolnce,vircon,
+     x      lmsite,g_qt4f,ntpmls)
           
         else if(keyens.eq.3) then
 
@@ -416,7 +417,8 @@ c     Berendsen thermostat and isotropic barostat
           call nptvv_b1
      x      (safe,lshmov,isw,idnode,mxnode,natms,imcon,nscons,
      x      ntcons,ntpatm,tstep,taut,taup,sigma,engke,press,elrc,
-     x      virlrc,tolnce,virtot,vircon,volm)
+     x      virlrc,tolnce,virtot,vircon,volm,
+     x      lmsite,ntpmls,g_qt4f)
 
         else if(keyens.eq.5) then
 
@@ -426,7 +428,8 @@ c     Nose-Hoover thermostat and isotropic barostat
      x      (safe,lshmov,isw,idnode,mxnode,natms,imcon,nscons,
      x      ntcons,ntpatm,ntshl,keyshl,tstep,taut,taup,sigma,temp,
      x      chip,chit,consv,conint,engke,elrc,tolnce,vircon,
-     x      virtot,virlrc,volm,press,chit_shl,sigma_shl)
+     x      virtot,virlrc,volm,press,chit_shl,sigma_shl,
+     x      lmsite,ntpmls,g_qt4f)
 
         else if(keyens.eq.6) then
 

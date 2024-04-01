@@ -1089,8 +1089,6 @@ c**********************************************************************
         uyy((i-iatm0)*nbeads+1)=yyy(i)
         uzz((i-iatm0)*nbeads+1)=zzz(i)
         
-c     PIMD nbead = 1 testing
-c     TESTED BY DIL LIMBU        
        if(nbeads.gt.1)then
         uxx((i-iatm0+1)*nbeads)=xxx((nbeads-1)*natms+i)-xxx(i)
         uyy((i-iatm0+1)*nbeads)=yyy((nbeads-1)*natms+i)-yyy(i)
@@ -1142,8 +1140,6 @@ c**********************************************************************
         pyy((i-iatm0)*nbeads+1)=vyy(i)
         pzz((i-iatm0)*nbeads+1)=vzz(i)
 
-c     PIMD nbead = 1 testing
-c     TESTED BY DIL LIMBU        
        if(nbeads.gt.1)then
         pxx((i-iatm0+1)*nbeads)=vxx((nbeads-1)*natms+i)-vxx(i)
         pyy((i-iatm0+1)*nbeads)=vyy((nbeads-1)*natms+i)-vyy(i)
@@ -1276,8 +1272,6 @@ c**********************************************************************
         yyy(i)=uyy((i-iatm0)*nbeads+1)
         zzz(i)=uzz((i-iatm0)*nbeads+1)
         
-c     PIMD nbead = 1 testing
-c     TESTED BY DIL LIMBU        
        if(nbeads.gt.1)then
         xxx((nbeads-1)*natms+i)=uxx((i-iatm0+1)*nbeads)
      x    +uxx((i-iatm0)*nbeads+1)
@@ -1368,8 +1362,6 @@ c**********************************************************************
         vyy(i)=pyy((i-iatm0)*nbeads+1)
         vzz(i)=pzz((i-iatm0)*nbeads+1)
 
-c     PIMD nbead = 1 testing
-c     TESTED BY DIL LIMBU        
        if(nbeads.gt.1)then
         vxx((nbeads-1)*natms+i)=pxx((i-iatm0+1)*nbeads)
      x    +pxx((i-iatm0)*nbeads+1)
@@ -2296,11 +2288,7 @@ c**********************************************************************
         init = 1
       endif
 
-      if (nbeads .eq. 1) then
-
-        q(1) = q(1)+p(1)*poly(3,1)*rmass(1)
-
-      else
+      if (nbeads .gt. 1) then
 
         do k=2,nbeads
 

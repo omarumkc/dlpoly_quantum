@@ -1480,7 +1480,7 @@ c    if(lpimd == .true.) then write CENTROID position of HISTORYc file
           write(nhist,'(a8,4i10,f12.6)') 'timestep',
      x         nstep,natms,keytrj,imcon,tstep
 
-          if(imcon.gt.0) write(nhist,'(3g12.4)') cell
+          if(imcon.gt.0) write(nhist,'(3f12.3)') cell
  
           do i = 1,natms
 
@@ -1500,7 +1500,7 @@ c    if(lpimd == .true.) then write CENTROID position of HISTORYc file
             write(nhistc,'(a8,4i10,f12.6)') 'timestep',
      x         nstep,natmc,keytrj,imcon,tstep
  
-            if(imcon.gt.0) write(nhistc,'(3g12.4)') cell
+            if(imcon.gt.0) write(nhistc,'(3f12.4)') cell
           
             do i = 1,natmc
 
