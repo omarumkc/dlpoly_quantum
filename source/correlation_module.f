@@ -19,6 +19,9 @@ c***********************************************************************
       implicit none
 
       real(8), allocatable, save :: xoper(:),yoper(:),zoper(:)
+      real(8), allocatable, save :: xoper_prev(:) 
+      real(8), allocatable, save :: zoper_prev(:) 
+      real(8), allocatable, save :: yoper_prev(:)
 
       contains
 
@@ -35,7 +38,7 @@ c     authors - Nathan London and Dil Limbu 2023
 c
 c***********************************************************************
 
-      character*6 name
+      character*10 name
       integer, intent(in) :: idnode,mxnode,natms,ntpmls,itmols,keycorr
       integer, intent(in) :: keyens
       integer, intent(in) :: nummols(ntpmls),numsit(ntpmls)
@@ -47,9 +50,14 @@ c     allocate operator value arrays
       allocate(yoper(nummols(itmols)))
       allocate(zoper(nummols(itmols)))
 
+      allocate(xoper_prev(nummols(itmols))) 
+      allocate(zoper_prev(nummols(itmols)))
+      allocate(yoper_prev(nummols(itmols))) 
+
       xoper=0.d0
       yoper=0.d0
       zoper=0.d0
+
 
 c     open output file based on operator type
 
@@ -63,6 +71,10 @@ c     open output file based on operator type
           name='CORDIP'
           open(unit=corr,file=name,status='replace')
           write(corr,'(A8,I5)') "dipole",nummols(itmols)
+        elseif (keycorr.eq.3)then                             ! If keycorr is 3 (dipole derivative)
+          name='CORDIP_DER'                                  ! Set filename to 'CORDIP_DER'
+          open(unit=corr,file=name,status='replace')   ! Open file for writing, replace if exists
+          write(corr,'(A8,I5)') "dipder",nummols(itmols)
         endif
       endif
 
@@ -84,14 +96,19 @@ c     write initial value to file
         do i=1,nummols(itmols)
           write(corr,'(3e14.6)') xoper(i),yoper(i),zoper(i)
         enddo
-         
       endif
+
+      do i=1,nummols(itmols)
+        xoper_prev(i)=xoper(i)
+        yoper_prev(i)=yoper(i)
+        zoper_prev(i)=zoper(i)          
+      enddo
       
       end subroutine corr_init
       
       subroutine correlation
      x  (idnode,mxnode,natms,ntpmls,itmols,keyens,keycorr,nstep,nummols,
-     x  numsit,tstep)
+     x  numsit,tstep,wrtcorr)
 c***********************************************************************
 c     
 c     dl_poly_quantum subroutine for doing correlation function
@@ -103,11 +120,13 @@ c***********************************************************************
       integer, intent(in) :: idnode,mxnode,natms,ntpmls,itmols,nstep
       integer, intent(in) :: keyens,keycorr
       integer, intent(in) :: nummols(ntpmls),numsit(ntpmls)
-      real(8), intent(in) :: tstep
       integer :: i
+      integer wrtcorr
+      real(8) tstep,dt
+      real(8) xgrad(nummols(itmols)), ygrad(nummols(itmols)) 
+      real(8) zgrad(nummols(itmols))
 
-c     calculate value of operator
-
+c      Calculate
       if(keyens.eq.62)then
         call  calc_val_cent
      x    (idnode,mxnode,natms,ntpmls,itmols,keycorr,nstep,nummols,
@@ -117,17 +136,45 @@ c     calculate value of operator
      x    (idnode,mxnode,natms,ntpmls,itmols,keycorr,nstep,nummols,
      x    numsit)
       endif
-      
-c     write value of operator to file
-      if(idnode.eq.0)then
-         
-        write(corr,'(1e14.6)') nstep*tstep
+
+      if(keycorr.eq.3)then
+
+c        if(nstep.eq.0)then
+c          xoper_prev=0.d0
+c          yoper_prev=0.d0
+c          zoper_prev=0.d0
+c        endif
+
+        dt=tstep*wrtcorr
+
         do i=1,nummols(itmols)
-          write(corr,'(3e14.6)') xoper(i),yoper(i),zoper(i)
+          xgrad(i)=(xoper(i)-xoper_prev(i))/dt
+          ygrad(i)=(yoper(i)-yoper_prev(i))/dt
+          zgrad(i)=(zoper(i)-zoper_prev(i))/dt
+
+          xoper_prev(i)=xoper(i)
+          yoper_prev(i)=yoper(i)
+          zoper_prev(i)=zoper(i)          
         enddo
-         
+        
+c        Write gradients to file
+        if (idnode==0)then
+          write(corr,'(1e14.6)') nstep*tstep
+          do i=1,nummols(itmols)
+            write(corr, '(3e14.6)') xgrad(i),ygrad(i),zgrad(i)
+          enddo
+        endif
+
+      else
+c       Write
+        if(idnode.eq.0)then          
+          write(corr,'(1e14.6)') nstep*tstep
+          do i=1,nummols(itmols)
+            write(corr,'(3e14.6)') xoper(i),yoper(i),zoper(i)
+          enddo          
+        endif
       endif
-      
+
       end subroutine correlation
 
       subroutine calc_val_cent
@@ -149,7 +196,7 @@ c***********************************************************************
       real(8) mass(numsit(itmols)),charge(numsit(itmols))
       real(8) atmx(numsit(itmols)),atmy(numsit(itmols))
       real(8) atmz(numsit(itmols))
-      real(8) molmass,avgx,avgy,avgz,xval,yval,zval
+      real(8) molmass,avgx,avgy,avgz,xval,yval,zval,xvald,yvald,zvald
       real(8) comx,comy,comz
 
       imol0=(idnode*nummols(itmols))/mxnode+1
@@ -174,7 +221,7 @@ c     calculate molecular mass
       enddo
       
 c     get atom charges for dipole moment 
-      if(keycorr.eq.2)then
+      if(keycorr.eq.2.or.keycorr.eq.3)then
         do i=1,numsit(itmols)
           charge(i)=chgsit(ksite+i)
         enddo
@@ -191,7 +238,7 @@ c     get velocities or postions depending on operator
               datx(k)=vxx((k-1)*natms+(i-1)*numsit(itmols)+jsite+j)
               daty(k)=vyy((k-1)*natms+(i-1)*numsit(itmols)+jsite+j)
               datz(k)=vzz((k-1)*natms+(i-1)*numsit(itmols)+jsite+j)
-            elseif(keycorr.eq.2)then
+            elseif(keycorr.eq.2.or.keycorr.eq.3)then
               datx(k)=xxx((k-1)*natms+(i-1)*numsit(itmols)+jsite+j)
               daty(k)=yyy((k-1)*natms+(i-1)*numsit(itmols)+jsite+j)
               datz(k)=zzz((k-1)*natms+(i-1)*numsit(itmols)+jsite+j)
@@ -206,7 +253,9 @@ c     bead average before operator
         enddo
 
 c     get molecule position with minimum image convention
-        if(keycorr.eq.2) call mol_gather(numsit(itmols),atmx,atmy,atmz)
+        if(keycorr.eq.2.or.keycorr.eq.3)then 
+          call mol_gather(numsit(itmols),atmx,atmy,atmz)
+        endif
 
 c     calculate center-of-mass
         do j=1,numsit(itmols)
@@ -216,7 +265,7 @@ c     calculate center-of-mass
         enddo
 
 c     calculate dipole moment based on distance from center-of-mass        
-        if(keycorr.eq.2)then
+        if(keycorr.eq.2.or.keycorr.eq.3)then
           comx=xval
           comy=yval
           comz=zval
@@ -230,13 +279,48 @@ c     calculate dipole moment based on distance from center-of-mass
             yval=yval+charge(j)*(atmy(j)-comy)
             zval=zval+charge(j)*(atmz(j)-comz)
           enddo
-        
         endif
 
-c     store operater value for molecule        
+c c       calculate dipole derivative from dipole moment
+c         if (keycorr.eq.3) then                                      ! If keycorr equals 3 (dipole derivative)
+c             comx = xval                                                   ! Assign center-of-mass x-component
+c             comy = yval                                                   ! Assign center-of-mass y-component
+c             comz = zval                                                   ! Assign center-of-mass z-component
+
+c             xval = 0.d0                                                   ! Reset just dipole
+c             yval = 0.d0                                                   ! Reset yval
+c             zval = 0.d0                                                   ! Reset zval            
+            
+
+c             do k=1,nstep
+c                 do j = 1, numsit(itmols)                                      ! Loop over sites
+c                     xval = xval+charge(j)*(atmx(j)-comx)                     ! Calculate dipole moment x-component
+c                     yval = yval+charge(j)*(atmy(j)-comy)
+c                     zval = zval+charge(j)*(atmz(j)-comz)         
+c                 enddo    
+c                 if (k > 1) then                                                    ! Derivatives are calculated from the second step
+c                     xvald=(xoper(i)-xvald)/(tstep*wrtcorr)                     ! Calculate dipole derivatives for nstep > 1
+c                     yvald=(yoper(i)-yvald)/(tstep*wrtcorr) 
+c                     zvald=(zoper(i)-zvald)/(tstep*wrtcorr)                                      
+c                 else                                      ! If first step, dipole derivative is just dipole moment
+c                     xvald=xval
+c                     yvald=yval
+c                     zvald=zval        
+c                endif
+c             enddo
+c         endif
+
+
+c     store operater value for molecule 
+c         if (keycorr.eq.3) then         
+c           xoper(i)=xvald
+c           yoper(i)=yvald
+c           zoper(i)=zvald
+c         else
           xoper(i)=xval
           yoper(i)=yval
           zoper(i)=zval
+c         endif
       enddo
 
 c     sum over nodes
@@ -266,7 +350,7 @@ c***********************************************************************
       real(8) mass(numsit(itmols)),charge(numsit(itmols))
       real(8) atmx(numsit(itmols)),atmy(numsit(itmols))
       real(8) atmz(numsit(itmols))
-      real(8) molmass,avgx,avgy,avgz,xval,yval,zval
+      real(8) molmass,avgx,avgy,avgz,xval,yval,zval,xvald,yvald,zvald
       real(8) comx,comy,comz
 
       imol0=(idnode*nummols(itmols))/mxnode+1
@@ -290,7 +374,7 @@ c     calculate molecular mass
       enddo
       
 c     get atom charges for dipole moment 
-      if(keycorr.eq.2)then
+      if(keycorr.eq.2.or.keycorr.eq.3)then
         do i=1,numsit(itmols)
           charge(i)=chgsit(ksite+i)
         enddo
@@ -309,7 +393,7 @@ c     get atom charges for dipole moment
               atmx(j)=vxx((k-1)*natms+(i-1)*numsit(itmols)+jsite+j)
               atmy(j)=vyy((k-1)*natms+(i-1)*numsit(itmols)+jsite+j)
               atmz(j)=vzz((k-1)*natms+(i-1)*numsit(itmols)+jsite+j)
-            elseif(keycorr.eq.2)then
+            elseif(keycorr.eq.2.or.keycorr.eq.3)then
               atmx(j)=xxx((k-1)*natms+(i-1)*numsit(itmols)+jsite+j)
               atmy(j)=yyy((k-1)*natms+(i-1)*numsit(itmols)+jsite+j)
               atmz(j)=zzz((k-1)*natms+(i-1)*numsit(itmols)+jsite+j)
@@ -317,7 +401,7 @@ c     get atom charges for dipole moment
           enddo
 
 c     get molecule position with minimum image convention
-          if(keycorr.eq.2)then
+          if(keycorr.eq.2.or.keycorr.eq.3)then
             call mol_gather(numsit(itmols),atmx,atmy,atmz)
           endif
           
@@ -331,7 +415,7 @@ c     get center-of-mass value
           endif
 
 c     calculate dipole moment based on distance from center-of-mass        
-          if(keycorr.eq.2)then
+          if(keycorr.eq.2.or.keycorr.eq.3)then
             comx=datx(k)
             comy=daty(k)
             comz=daty(k)

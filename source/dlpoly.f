@@ -928,7 +928,7 @@ c     calculate correlation function
         if(lcorr.and.(mod(nstep,wrtcorr).eq.0))then
           call correlation
      x      (idnode,mxnode,natms,ntpmls,molcorr,keyens,keycorr,nstep,
-     x      nummols,numsit,tstep) 
+     x      nummols,numsit,tstep,wrtcorr) 
         endif
 
 c     calculate physical quantities

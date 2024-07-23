@@ -14,7 +14,7 @@ program correlation
   use ISO_C_BINDING
   implicit none 
 
-  include 'fftw3.f03'
+!  include 'fftw3.f03'
   include 'mpif.h'
 
   character(20) :: filenm
@@ -44,8 +44,14 @@ program correlation
 
   if(trim(cortype).eq.'velocity')then
     keycorr=1
-  else
+  else if(trim(cortype).eq.'dipole')then
     keycorr=2
+  else if(trim(cortype).eq.'dipder')then
+    keycorr=3
+  endif
+
+  if(trimtraj)then
+	  nstep=nint(0.9*nstep)
   endif
   
   dt=dt*1.d-12
@@ -100,6 +106,8 @@ program correlation
       filenm ='traj' // trim(filenum) // '/CORVEL'
     else if(keycorr.eq.2) then
       filenm ='traj' // trim(filenum) // '/CORDIP'
+    else if(keycorr.eq.3) then
+      filenm ='traj' // trim(filenum) // '/CORDIP_DER'
     endif
     write(*,*) idnode, filenm
     open((idnode+2)*mxnode,file=filenm,status='old')  
@@ -123,13 +131,13 @@ program correlation
     
     if(keycorr.eq.1)then
       call velocity(nstep,nummols,i,idnode,time,dip,corravg,corrsim)
-    else if(keycorr.eq.2)then
+    else if(keycorr.eq.2.or.keycorr.eq.3)then
       call spectrum(idnode,mxnode,nstep,nfreq,nummols,i,time,window,dip,corravg,spec,corrsim)
     endif
   
-    enddo
+  enddo
 
-  call MPI_BARRIER(MPI_COMM_WORLD)
+  call MPI_BARRIER(MPI_COMM_WORLD,ierr)
 
   wrttraj=ntraj
   wrtmol=nummols
@@ -147,7 +155,7 @@ program correlation
         call diffusion(i,time,corravg0,diff(i))
       enddo
     endif
-  else if(keycorr.eq.2)then
+  else if(keycorr.eq.2.or.keycorr.eq.3)then
     call MPI_REDUCE(corravg,corravg0,nstep+1,MPI_DOUBLE_PRECISION,MPI_SUM,0,MPI_COMM_WORLD,ierr)
     call MPI_REDUCE(corrsim,corrsim0,nstep+1,MPI_DOUBLE_PRECISION,MPI_SUM,0,MPI_COMM_WORLD,ierr)
     call MPI_REDUCE(spectemp,spec0,nfreq,MPI_DOUBLE_PRECISION,MPI_SUM,0,MPI_COMM_WORLD,ierr)
@@ -165,18 +173,22 @@ program correlation
     do i=1,nstep
       if(keycorr.eq.1)then
         write(3,'(500e14.6)') time(i),corravg0(i),corrsim0(i)
-      else if(keycorr.eq.2)then
+      else if(keycorr.eq.2.or.keycorr.eq.3)then
         write(3,'(500e14.6)') time(i),corravg0(i),corrsim0(i)
       end if
     enddo
     close(3)
   endif
 
-  if(idnode.eq.0.and.keycorr.eq.2)then
+  if(idnode.eq.0.and.(keycorr.eq.2.or.keycorr.eq.3))then
     open(4,file='SPEC',status='replace')
 
     do i=1,nfreq
-      write(4,'(2e14.6)') spec(1,i),spec0(i)*spec(1,i)**2
+      if(keycorr.eq.3)then
+		    write(4,'(2e14.6)') spec(1,i),spec0(i)
+      else
+        write(4,'(2e14.6)') spec(1,i),spec0(i)*spec(1,i)**2
+      endif
     enddo
     close(4)
   else if (idnode.eq.0.and.keycorr.eq.1)then
@@ -363,13 +375,14 @@ subroutine spectrum(idnode,mxnode,nstep,nfreq,nummols,traj,time,window,dip,corra
   write(filenum,'(i0.3)') traj
   filenm ='SPECtraj' // trim(filenum)
   open((idnode+4)*mxnode,file=filenm,status='replace')  
-    do i=1,nfreq
-      write((idnode+4)*mxnode,'(2e14.6)') spec(1,i),hold(i,1)*spec(1,i)**2
+		do i=1,nfreq
+        write((idnode+4)*mxnode,'(2e14.6)') spec(1,i),hold(i,1)*spec(1,i)**2
     enddo
+
   close((idnode+4)*mxnode)
 
-  call dfftw_destroy_plan(planf1)  
-  call dfftw_destroy_plan(planb)  
-  call dfftw_destroy_plan(planf2)  
+  call dfftw_destroy_plan(planf1)
+  call dfftw_destroy_plan(planb)
+  call dfftw_destroy_plan(planf2)
 
-end subroutine spectrum
+ end subroutine spectrum

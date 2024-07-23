@@ -16,7 +16,7 @@ TYPE=par
 # Define object files
 
 OBJ_MOD = parse_module.o setup_module.o error_module.o \
-	site_module.o config_module.o pair_module.o utility_module.o \
+	site_module.o config_module.o pair_module.o utility_module.o\
         water_module.o \
         pimd_module.o metafreeze_module.o solvation_module.o tether_module.o \
 	vdw_module.o property_module.o rigid_body_module.o \
@@ -97,3 +97,103 @@ clean:
 # Declare dependency on module files
 
 $(OBJ_SRC): $(OBJ_MOD)
+
+# utility_module.o: config_module.o
+# water_module.o: config_module.o
+# metafreeze_module.o: setup_module.o
+# pimd_module.o: setup_module.o
+# error_module.o: setup_module.o
+# site_module.o: error_module.o
+# setup_module.o: parse_module.o
+# config_module.o: setup_module.o
+# solvation_module.o: setup_module.o
+# pair_module.o: setup_module.o
+# tether_module.o: config_module.o
+# property_module.o: config_module.o
+# vdw_module.o: config_module.o
+# bonds_module.o: config_module.o
+# angles_module.o: config_module.o
+# rigid_body_module.o: config_module.o
+# dihedral_module.o: config_module.o
+# inversion_module.o: config_module.o
+# shake_module.o: error_module.o
+# pair_module.o: error_module.o
+# config_module.o: error_module.o
+# pimd_module.o: config_module.o
+# metafreeze_module.o: utility_module.o
+# pimd_module.o: water_module.o
+# property_module.o: tether_module.o
+# angles_module.o: property_module.o
+# ewald_module.o: exclude_module.o
+# coulomb_module.o: ewald_module.o
+# lf_rotation1_module.o: lf_motion_module.o
+# lf_rotation2_module.o: lf_rotation1_module.o
+# vv_rotation2_module.o: vv_rotation1_module.o
+# integrator_module.o: pmf_module.o
+# exclude_module.o: angles_module.o
+# core_shell_module.o: config_module.o
+# hkewald_module.o: config_module.o
+# external_field_module.o: config_module.o
+# metal_module.o: config_module.o
+# four_body_module.o: config_module.o
+# nhc_module.o: error_module.o
+# ensemble_tools_module.o: setup_module.o
+# temp_scalers_module.o: config_module.o
+# three_body_module.o: config_module.o
+# tersoff_module.o: config_module.o
+# spme_module.o: config_module.o
+# neu_coul_module.o: config_module.o
+# nlist_builders_module.o: config_module.o
+# forces_module.o: config_module.o
+# pimd_piglet_module.o: setup_module.o
+# lf_motion_module.o: config_module.o
+# vv_motion_module.o: config_module.o
+# vv_pimd_module.o: setup_module.o
+# pmf_module.o: config_module.o
+# vv_rotation1_module.o: config_module.o
+# driver_module.o: config_module.o
+# optimiser_module.o: config_module.o
+# hyper_dynamics_module.o: config_module.o
+# correlation_module.o: setup_module.o
+# pass_tools.o: setup_module.o
+# basic_comms.o: setup_module.o
+# merge_tools.o: error_module.o
+# define_system_module.o: angles_module.o
+# pimd_piglet_module.o: pimd_module.o
+# ensemble_tools_module.o: config_module.o
+# solvation_module.o: error_module.o
+# correlation_module.o: config_module.o
+# vv_pimd_module.o: config_module
+# pass_tools.o: error_module.o
+# solvation_module.o: config_module.o
+# shake_module.o: site_module.o
+# merge_tools.o: core_shell_module.o
+# vdw_module.o: metafreeze_module.o
+# water_module.o: utility_module.o
+# tether_module.o: utility_module.o
+# rigid_body_module.o: solvation_module.o 
+# bonds_module.o: metafreeze_module.o
+# core_shell_module.o: property_module.o 
+# dihedral_module.o: metafreeze_module.o
+# inversion_module.o: metafreeze_module.o
+# four_body_module.o: metafreeze_module.o
+# hkewald_module.o: exclude_module.o
+# external_field_module.o: utility_module.o
+# metal_module.o: property_module.o
+# ensemble_tools_module.o: core_shell_module.o
+# temp_scalers_module.o: core_shell_module.o
+# spme_module.o: utility_module.o
+# three_body_module.o: metafreeze_module.o
+# neu_coul_module.o: ewald_module.o
+# tersoff_module.o: utility_module.o
+# lf_motion_module.o: ensemble_tools_module.o
+# forces_module.o: coulomb_module.o
+# nlist_builders_module.o: exclude_module.o
+# vv_motion_module.o: ensemble_tools_module.o
+# optimiser_module.o: rigid_body_module.o
+# vv_rotation1_module.o: ensemble_tools_module.o
+# pmf_module.o: ensemble_tools_module.o
+# driver_module.o: forces_module.o
+# hyper_dynamics_module.o: ensemble_tools_module.o
+# correlation_module.o: utility_module.o
+# shake_module.o: solvation_module.o

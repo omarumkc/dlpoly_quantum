@@ -715,6 +715,10 @@ c     correlation function option
             keycorr=2
             molcorr=intstr(directive,lenrec,idum)
             wrtcorr=intstr(directive,lenrec,idum)
+          elseif(findstring('dipder',directive,idum))then
+            keycorr=3
+            molcorr=intstr(directive,lenrec,idum)
+            wrtcorr=intstr(directive,lenrec,idum)
 c         default is velocity autocorrelation for molecule type 1
 c         written every 10 steps
           else
@@ -731,6 +735,13 @@ c         written every 10 steps
      x          wrtcorr
             elseif(keycorr.eq.2)then 
               write(nrite,"(/,1x,'Correlation function: dipole')")
+              write(nrite,"(/,1x,'Correlation function molecule:',i5)")
+     x          molcorr
+              write(nrite,"(/,1x,'Correlation function steps:',i5)")
+     x          wrtcorr
+            elseif(keycorr.eq.3)then 
+              write(nrite,"(/,1x,'Correlation function: 
+     x         dipole derivative')")
               write(nrite,"(/,1x,'Correlation function molecule:',i5)")
      x          molcorr
               write(nrite,"(/,1x,'Correlation function steps:',i5)")
